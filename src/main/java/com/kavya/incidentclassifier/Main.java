@@ -9,14 +9,26 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        String logFile = args.length > 0 ? args[0] : "sample-logs/sample_incidents.log";
+        String logFile = "sample-logs/sample_incidents.log";
+        int daysWindow = 7; // default
+
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("--days-window") && i + 1 < args.length) {
+                daysWindow = Integer.parseInt(args[i + 1]);
+                i++;
+            } else if (!args[i].startsWith("--")) {
+                logFile = args[i];
+            }
+        }
 
         LogParser parser = new LogParser();
         List<Incident> incidents = parser.parseFile(logFile);
 
-        RuleBasedClassifier classifier = new RuleBasedClassifier();
+        RuleBasedClassifier classifier = new RuleBasedClassifier(daysWindow);
         incidents.forEach(classifier::classify);
 
-        new ReportGenerator().printSummary(incidents);
+        ReportGenerator reportGenerator = new ReportGenerator();
+        reportGenerator.printSummary(incidents);
+        reportGenerator.writeJsonReport(incidents, "output/report.json");   // ← ADD THIS LINE
     }
 }
