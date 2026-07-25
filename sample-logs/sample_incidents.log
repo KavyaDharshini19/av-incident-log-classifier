@@ -1,0 +1,8 @@
+2026-06-01 09:12:03 [ERROR] Room-204: No audio output detected on Crestron endpoint. Device: CRES-204A
+2026-06-01 09:45:11 [ERROR] Room-118: Zoom connection timeout after 30s. Network unreachable.
+2026-06-01 10:03:44 [WARN]  Room-305: TLS handshake failed. Certificate for tms.internal.corp expired 2026-05-28.
+2026-06-01 11:20:09 [ERROR] Room-204: Video freeze detected. Mersive Solstice stream dropped.
+2026-06-01 12:01:55 [ERROR] Room-118: NUC device unresponsive. Ping timeout.
+2026-06-01 13:14:30 [WARN]  Room-410: SSL certificate for rms.internal.corp expiring in 5 days.
+2026-06-01 14:02:17 [ERROR] Room-305: Microphone not detected. Audio input device missing.
+2026-06-01 15:33:02 [ERROR] Room-118: Teams Room account authentication failed. Token expired.

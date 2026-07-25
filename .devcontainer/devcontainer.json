@@ -1,0 +1,34 @@
+{
+  "name": "AV Incident Log Classifier - Java Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/java:17",
+
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "17",
+      "installMaven": "true",
+      "mavenVersion": "3.9.6"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-maven",
+        "redhat.java",
+        "vscjava.vscode-java-test",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  "postCreateCommand": "mvn -v && java -version",
+
+  "forwardPorts": [],
+
+  "remoteUser": "vscode"
+}
