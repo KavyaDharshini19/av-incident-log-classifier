@@ -44,4 +44,14 @@ class RuleBasedClassifierTest {
         classifier.classify(i);
         assertEquals(Category.CONNECTIVITY, i.getCategory());
     }
+
+    @Test
+    void respectsCustomDaysWindow() {
+        RuleBasedClassifier tightWindow = new RuleBasedClassifier(3); // only flag within 3 days
+        Incident i = new Incident(LocalDateTime.now(), "WARN", "410",
+                "SSL certificate for rms.internal.corp expiring in 5 days.");
+        tightWindow.classify(i);
+        assertEquals(Category.CERTIFICATE_RENEWAL, i.getCategory());
+        assertTrue(i.getSuggestedRootCause().contains("outside current warning window"));
+    }
 }

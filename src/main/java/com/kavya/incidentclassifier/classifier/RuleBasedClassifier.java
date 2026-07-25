@@ -7,54 +7,67 @@ import java.util.regex.*;
 
 public class RuleBasedClassifier {
 
+    private final int daysWindow;
+
+    // Default constructor — 7-day warning window if nothing specified
+    public RuleBasedClassifier() {
+        this(7);
+    }
+
+    public RuleBasedClassifier(int daysWindow) {
+        this.daysWindow = daysWindow;
+    }
+
     public void classify(Incident incident) {
         String msg = incident.getRawMessage().toLowerCase();
 
-        // --- Certificate renewal (check first — often mixed with "connection failed" wording) ---
         if (msg.contains("certificate") || msg.contains("tls handshake") || msg.contains("ssl")) {
             incident.setCategory(Category.CERTIFICATE_RENEWAL);
             if (msg.contains("expired")) {
                 incident.setSuggestedRootCause(
                         "Certificate has already expired — service is down. Renew immediately and redeploy.");
-            } else if (containsExpiringSoon(msg)) {
-                incident.setSuggestedRootCause(
-                        "Certificate expiring within the warning window — schedule renewal before failure occurs.");
             } else {
-                incident.setSuggestedRootCause(
-                        "Certificate/TLS-related failure — verify certificate chain and expiry date.");
+                Integer daysUntilExpiry = extractDaysUntilExpiry(msg);
+                if (daysUntilExpiry != null && daysUntilExpiry <= daysWindow) {
+                    incident.setSuggestedRootCause(
+                            "Certificate expiring in " + daysUntilExpiry + " day(s) — within the "
+                                    + daysWindow + "-day warning window. Schedule renewal before failure occurs.");
+                } else if (daysUntilExpiry != null) {
+                    incident.setSuggestedRootCause(
+                            "Certificate expiring in " + daysUntilExpiry
+                                    + " day(s) — outside current warning window (" + daysWindow + " days). Monitor.");
+                } else {
+                    incident.setSuggestedRootCause(
+                            "Certificate/TLS-related failure — verify certificate chain and expiry date.");
+                }
             }
             return;
         }
 
-        // --- Authentication ---
         if (msg.contains("authentication failed") || msg.contains("token expired")) {
             incident.setCategory(Category.AUTHENTICATION);
             incident.setSuggestedRootCause("Credential or token expiry — check identity provider / re-auth device.");
             return;
         }
 
-        // --- Connectivity ---
         if (msg.contains("timeout") || msg.contains("unreachable") || msg.contains("ping")) {
             incident.setCategory(Category.CONNECTIVITY);
             incident.setSuggestedRootCause("Network path issue — check switch port, VLAN, or firewall rules.");
             return;
         }
 
-        // --- Audio ---
         if (msg.contains("audio") || msg.contains("microphone") || msg.contains("no sound")) {
             incident.setCategory(Category.AUDIO);
             incident.setSuggestedRootCause("Audio device/driver issue — check device enumeration and cabling.");
             return;
         }
 
-        // --- Video ---
         if (msg.contains("video") || msg.contains("stream") || msg.contains("freeze")) {
             incident.setCategory(Category.VIDEO);
             incident.setSuggestedRootCause("Video pipeline issue — check bandwidth, codec, or capture device.");
             return;
         }
 
-        // --- Hardware (catch-all for device-level issues) ---
         if (msg.contains("unresponsive") || msg.contains("device")) {
             incident.setCategory(Category.HARDWARE);
             incident.setSuggestedRootCause("Endpoint hardware fault — power-cycle device, check firmware version.");
@@ -65,8 +78,12 @@ public class RuleBasedClassifier {
         incident.setSuggestedRootCause("No matching rule — review manually and consider adding a new rule.");
     }
 
-    private boolean containsExpiringSoon(String msg) {
-        Pattern p = Pattern.compile("expir\\w* in \\d+ days?");
-        return p.matcher(msg).find();
+    private Integer extractDaysUntilExpiry(String msg) {
+        Pattern p = Pattern.compile("expir\\w* in (\\d+) days?");
+        Matcher m = p.matcher(msg);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        return null;
     }
 }
